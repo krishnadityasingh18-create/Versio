@@ -7,8 +7,9 @@
     "allowJs": true,
     "strict": true,
     "noEmit": true,
+    "jsx": "preserve",
     "types": ["node"],
     "paths": { "@/*": ["./*"] }
   },
-  "exclude": ["node_modules", ".next"]
+  "exclude": ["node_modules", ".next", ".claude"]
 }
