@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { signInWithEmail, signUpWithEmail } from "@/app/actions/auth.js";
+import { signInWithEmail, signInWithOAuth, signUpWithEmail } from "@/app/actions/auth.js";
 import { ErrorNote } from "./ui.jsx";
 
 export default function AuthForm({ mode }) {
@@ -63,9 +63,19 @@ export default function AuthForm({ mode }) {
         </button>
       </form>
       <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
-        {/* OAuth providers are switched off until the OAuth apps exist. */}
+        <button type="button" className="btn-ghost" disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            // Redirects to GitHub on success; only returns on failure.
+            const r = await signInWithOAuth("github");
+            setBusy(false);
+            if (r && !r.ok) setError(r.message);
+          }}>
+          Continue with GitHub
+        </button>
+        {/* Google is switched off until its OAuth app exists. */}
         <button type="button" className="btn-ghost" disabled>Continue with Google (coming soon)</button>
-        <button type="button" className="btn-ghost" disabled>Continue with GitHub (coming soon)</button>
       </div>
       <p className="mt-4 text-sm text-ink-2">
         {isSignup ? (
