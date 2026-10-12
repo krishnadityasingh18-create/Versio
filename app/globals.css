@@ -78,6 +78,10 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+  /* Code shows exactly what was typed: no -> or == ligatures. */
+  code, pre, kbd, samp, .font-mono {
+    font-variant-ligatures: none;
+  }
   ::placeholder {
     color: var(--color-ink-3);
   }

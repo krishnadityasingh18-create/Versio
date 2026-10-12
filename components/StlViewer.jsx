@@ -32,14 +32,19 @@ export default function StlViewer({ url, name, sync = null }) {
       const el = box.current;
       const geo = new STLLoader().parse(buf);
       geo.center();
+      // Many exporters write zero or wrong normals; recompute so lighting always shows the shape.
+      geo.computeVertexNormals();
       geo.computeBoundingSphere();
       const size = geo.boundingSphere?.radius || 1;
       const css = getComputedStyle(el);
       const material = new THREE.MeshStandardMaterial({ color: new THREE.Color(css.getPropertyValue("--color-accent").trim() || "teal"), roughness: 0.7, metalness: 0.1 });
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(40, 1, size / 100, size * 100);
-      camera.add(new THREE.DirectionalLight(0xffffff, 2));
-      scene.add(new THREE.Mesh(geo, material), new THREE.AmbientLight(0xffffff, 0.8), camera);
+      // Key light above-left of the camera so adjacent faces get different shades.
+      const key = new THREE.DirectionalLight(0xffffff, 2.2);
+      key.position.set(-1, 1.2, 0.6).multiplyScalar(size * 4);
+      camera.add(key);
+      scene.add(new THREE.Mesh(geo, material), new THREE.AmbientLight(0xffffff, 0.55), camera);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -49,7 +54,8 @@ export default function StlViewer({ url, name, sync = null }) {
       const render = () => renderer.render(scene, camera);
 
       // View state as { theta, phi, zoom } so two models of different sizes can share it.
-      const base = size * 2.8;
+      // Fits the bounding sphere in a 40° view with margin, down to ~0.7 aspect (phones).
+      const base = size * 4.2;
       const off = new THREE.Vector3();
       const sph = new THREE.Spherical();
       const read = () => {
