@@ -184,3 +184,44 @@ File contents for viewing: `getDownloadUrls(versionId)` → `fetch(url)` → tex
 | backend | `getRequest` → `submitted` and `base` are `Version \| null`. RLS hides a copy's versions from the owner once the copy is back to `private` (after **reject**), and `base` is hidden if the copy row itself is hidden. UI should show "This version is no longer available" instead of crashing. | Implemented as nullable; needs frontend ack. |
 | backend | List reads (`getDashboard`, `getProject.history`/copies, `getCopy.versions`, `getInbox`, `listNotifications`) return the newest 50 rows; no cursor argument exists in the frozen signatures. If a "load more" is needed, add an optional `{ before: number }` arg. | Open; not needed for MVP. |
 | backend | Added npm script `check:flow` to `package.json` (scripts only, no deps). | Done. |
+
+---
+
+# Phase 2 (P1 features) — additions, frozen like the above
+
+| Stream | Owns |
+|---|---|
+| **backend2** | `supabase/migrations/0006_p1.sql`, `app/actions/explore.js`, `app/actions/profiles.js`, additions in `app/actions/projects.js` / `requests.js` / `upload.js` (only what is listed below), `lib/actions/*`, `scripts/takedown.mjs`, `tests/p1*.test.mjs` |
+| **frontend2** | `app/explore/*`, `app/u/[username]/*`, `app/page.jsx` (landing), `components/*` (new files + Compare/VersionFiles/Editor/ui), `app/p/[id]/*`, `package.json` (add deps only) |
+
+## Data changes (0006_p1.sql)
+- `stars(user_id, project_id, created_at)` PK(user_id, project_id); RLS: anyone can read rows of readable projects; writes via RPC `toggle_star(p_project_id) returns jsonb {starred, star_count}`.
+- `projects.star_count int not null default 0` (kept in sync by `toggle_star`).
+- `versions.number int` — per-project sequence (1, 2, 3 … across main and copies), assigned inside `commit_version` / `restore_version` / anything that inserts versions; backfill existing rows ordered by id.
+- Search: trigram or `ilike` on `projects.title` + `description`, public projects only (RLS already hides private).
+- `takedown_blob(p_hash bytea)` service_role only: sets `blobs.blocked_at`.
+
+## Type changes
+- `Version` gains `number: number`. **UI shows `v{number}`**, never the raw id.
+- `Project` gains `star_count: number` and (when signed in) `starred: boolean`.
+- `RequestSummary` (from `getRequest`) gains `project_type: ProjectType`.
+
+## New actions
+```js
+// app/actions/explore.js
+getExplore({ q?: string, type?: ProjectType, sort?: "recent"|"stars", cursor?: string|null })
+  -> Result<{ projects: (Project & { star_count: number })[], nextCursor: string|null }>   // 24 per page
+// app/actions/profiles.js
+getProfile(username) -> Result<{ profile: ProfileRef & { tags: string[], created_at: string },
+                                 projects: Project[], publishedCopies: (Copy & { project_title: string })[] }>
+// app/actions/projects.js (addition)
+toggleStar(projectId) -> Result<{ starred: boolean, star_count: number }>
+```
+
+## upload.js addition
+After a successful `commit_version`, delete this caller's `staging/<uid>/<hash>` keys (best effort, never fails the save). Supabase Storage has no lifecycle rules.
+
+## Frontend libraries (lazy-loaded where heavy)
+`diff` (jsdiff) for differences: `diffWords` for writing, `diffLines` for code, none for CAD.
+`shiki` for code highlighting (load on demand, a few languages, light + dark themes).
+`three` for the STL viewer, dynamic import on CAD pages only.
