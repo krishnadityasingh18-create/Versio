@@ -1,6 +1,5 @@
 // @ts-nocheck
 import Link from "next/link";
-import { getProject } from "@/app/actions/projects.js";
 import { getRequest } from "@/app/actions/requests.js";
 import { requireViewer } from "@/components/viewer.js";
 import Compare from "@/components/Compare.jsx";
@@ -24,8 +23,8 @@ export default async function RequestPage({ params }) {
   const r = await getRequest(Number(id));
   if (!r.ok) return <ErrorPage result={r} />;
   const { request, events, isOwner, submitted, base } = r.data;
-  const p = await getProject(request.project_id);
-  const type = p.ok ? p.data.project.type : "code";
+  const type = request.project_type ?? "code";
+  const numberOf = (vid) => (vid === submitted?.id ? submitted.number : vid === base?.id ? base.number : null);
   const isContributor = !isOwner;
 
   return (
@@ -38,7 +37,7 @@ export default async function RequestPage({ params }) {
             <StatusBadge status={request.status} />
           </div>
           <p className="text-sm text-ink-2">
-            From <Who profile={request.contributor} /> to <Who profile={request.owner} /> · <Link href={`/c/${request.copy_id}`}>open the copy</Link>
+            From <Who profile={request.contributor} link /> to <Who profile={request.owner} link /> · <Link href={`/c/${request.copy_id}`}>open the copy</Link>
           </p>
         </header>
 
@@ -61,7 +60,7 @@ export default async function RequestPage({ params }) {
               <li key={e.id} className="border-b border-line py-3 last:border-b-0">
                 <p className="text-sm">
                   <span className="font-medium"><Who profile={e.actor} /></span> {KIND[e.kind] ?? e.kind}
-                  <span className="meta"> · {formatDate(e.created_at)}{e.version_id ? ` · v${e.version_id}` : ""}</span>
+                  <span className="meta"> · {formatDate(e.created_at)}{numberOf(e.version_id) ? ` · v${numberOf(e.version_id)}` : ""}</span>
                 </p>
                 {e.comment && <p className="prose-text mt-1 whitespace-pre-wrap text-ink">{e.comment}</p>}
               </li>
@@ -80,7 +79,7 @@ export default async function RequestPage({ params }) {
         <section aria-labelledby="compare" className="flex flex-col gap-3">
           <h2 id="compare" className="h2">Side by side</h2>
           {submitted && base ? (
-            <Compare baseId={base.id} submittedId={submitted.id} type={type} />
+            <Compare baseId={base.id} submittedId={submitted.id} baseNumber={base.number} submittedNumber={submitted.number} type={type} />
           ) : (
             <Banner title="This copy is no longer visible">
               Its versions are private again, so they can't be shown here.

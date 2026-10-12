@@ -34,7 +34,8 @@ export default async function RootLayout({ children }) {
           <>
             <header className="flex items-center justify-between border-b border-line px-4 py-3 sm:px-8">
               <Link href="/" className="text-base font-medium text-ink no-underline">Versio</Link>
-              <nav className="flex gap-2" aria-label="Account">
+              <nav className="flex gap-2" aria-label="Main">
+                <Link href="/explore" className="btn-ghost border-transparent">Explore</Link>
                 <Link href="/login" className="btn-ghost">Log in</Link>
                 <Link href="/signup" className="btn">Sign up</Link>
               </nav>

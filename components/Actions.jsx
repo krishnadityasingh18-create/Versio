@@ -4,7 +4,8 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { makeCopy } from "@/app/actions/copies.js";
-import { restoreVersion } from "@/app/actions/projects.js";
+import { restoreVersion, toggleStar } from "@/app/actions/projects.js";
+import { StarIcon } from "./ui.jsx";
 import { promoteCopy } from "@/app/actions/requests.js";
 
 function useAction() {
@@ -94,6 +95,38 @@ export function PromoteButton({ copyId, small = false }) {
           </button>
         </div>
       </dialog>
+    </span>
+  );
+}
+
+/** Star toggle: optimistic, rolls back if the server says no. */
+export function StarButton({ projectId, starred: initialStarred = false, count: initialCount = 0 }) {
+  const [state, setState] = useState({ starred: initialStarred, count: initialCount });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function toggle() {
+    const before = state;
+    setState({ starred: !before.starred, count: before.count + (before.starred ? -1 : 1) });
+    setBusy(true);
+    setError(null);
+    const r = await toggleStar(projectId);
+    setBusy(false);
+    if (r.ok) setState({ starred: r.data.starred, count: r.data.star_count });
+    else {
+      setState(before);
+      setError(r.message);
+    }
+  }
+
+  return (
+    <span className="inline-flex flex-col items-start gap-1">
+      <button type="button" className={`btn-ghost ${state.starred ? "text-accent-text" : ""}`} aria-pressed={state.starred} disabled={busy} onClick={toggle}>
+        <StarIcon filled={state.starred} />
+        {state.starred ? "Starred" : "Star"}
+        <span className="meta">{state.count}<span className="sr-only"> stars</span></span>
+      </button>
+      <Err error={error} />
     </span>
   );
 }

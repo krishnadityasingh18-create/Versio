@@ -2,6 +2,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getDownloadUrls } from "@/app/actions/upload.js";
+import CodeBlock from "./Code.jsx";
+import StlViewer, { isStl } from "./StlViewer.jsx";
 import { Empty, ErrorNote, formatBytes, isTextPath } from "./ui.jsx";
 
 /** Files of one version with signed URLs: { loading, error, files }. versionId null = no files. */
@@ -36,9 +38,10 @@ export function textClass(type) {
 /** Read-only file browser for a version. */
 export default function VersionFiles({ versionId, type }) {
   const { loading, error, files } = useVersionFiles(versionId);
-  const [open, setOpen] = useState(null); // { path, text?, error? }
+  const [open, setOpen] = useState(null); // { path, text?, error?, url? (3D) }
 
   async function view(f) {
+    if (type === "cad") return setOpen({ path: f.path, url: f.url });
     setOpen({ path: f.path });
     try {
       setOpen({ path: f.path, text: await fetchText(f.url) });
@@ -52,7 +55,7 @@ export default function VersionFiles({ versionId, type }) {
   if (error) return <ErrorNote>{error}</ErrorNote>;
   if (files.length === 0) return <Empty>This version has no files.</Empty>;
 
-  const canRead = (f) => type !== "cad" && f.url && isTextPath(f.path);
+  const canRead = (f) => f.url && (type === "cad" ? isStl(f.path) : isTextPath(f.path));
 
   return (
     <div className="flex flex-col gap-4">
@@ -83,10 +86,14 @@ export default function VersionFiles({ versionId, type }) {
       {open && (
         <section aria-label={`Contents of ${open.path}`} className="card">
           <p className="meta mb-3">{open.path}</p>
-          {open.error ? (
+          {open.url ? (
+            <StlViewer key={open.url} url={open.url} name={open.path} />
+          ) : open.error ? (
             <ErrorNote>{open.error}</ErrorNote>
           ) : open.text == null ? (
             <p className="text-sm text-ink-2">Loading…</p>
+          ) : type === "code" ? (
+            <CodeBlock path={open.path} text={open.text} className={`overflow-x-auto ${textClass(type)}`} />
           ) : (
             <pre className={`overflow-x-auto whitespace-pre-wrap ${textClass(type)} ${type === "writing" ? "max-w-[70ch]" : ""}`}>{open.text}</pre>
           )}

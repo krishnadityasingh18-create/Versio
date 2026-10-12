@@ -144,3 +144,16 @@
     @apply text-base font-medium;
   }
 }
+
+/* Shiki output (components/Code.jsx): keep our font and surface, use the dark theme's colours in dark mode. */
+.code-hl pre {
+  font: inherit;
+  white-space: pre-wrap;
+  background-color: transparent !important;
+}
+@media (prefers-color-scheme: dark) {
+  .code-hl pre,
+  .code-hl span {
+    color: var(--shiki-dark) !important;
+  }
+}

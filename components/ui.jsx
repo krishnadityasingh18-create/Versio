@@ -74,8 +74,29 @@ export function Empty({ children, action }) {
   );
 }
 
-export function Who({ profile }) {
-  return <span>{profile?.display_name || profile?.username || "someone"}</span>;
+/** A person's name; `link` makes it a link to their profile (only outside other links). */
+export function Who({ profile, link = false }) {
+  const name = profile?.display_name || profile?.username || "someone";
+  return link && profile?.username ? <Link href={`/u/${profile.username}`}>{name}</Link> : <span>{name}</span>;
+}
+
+/** Star count for lists, with the word for screen readers. */
+export function Stars({ count }) {
+  return (
+    <span className="meta inline-flex items-center gap-1" title={`${count ?? 0} stars`}>
+      <StarIcon />
+      <span className="sr-only">Stars: </span>
+      {count ?? 0}
+    </span>
+  );
+}
+
+export function StarIcon({ filled = false }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round">
+      <path d="M8 1.5l1.9 4 4.3.5-3.2 3 .9 4.3L8 11.1l-3.9 2.2.9-4.3-3.2-3 4.3-.5z" />
+    </svg>
+  );
 }
 
 export function formatBytes(n) {
