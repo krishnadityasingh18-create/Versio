@@ -3,6 +3,7 @@
 // Two-account end-to-end check of the core flow (PRD §5) against a real Supabase:
 //   A creates project → A saves main (commit_version, service role) → B makes copy → B saves →
 //   B submits → A asks for changes → B saves + resubmits → A approves → A promotes.
+//   P1: version numbers (incl. restore), star toggle, explore search + cursor, public profile.
 // Reads use the same PostgREST selects and mappers as app/actions/* (lib/actions/common.js), so a
 // wrong embed/FK name fails here. Run: `npm run check:flow` (reads .env.local).
 // Exit 0 = all pass, 1 = a check failed, 2 = SKIPPED (env missing). Deletes its users and blobs.
@@ -10,8 +11,9 @@ import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import {
   COPY_COLS, PROFILE_COLS, PROJECT_COLS, REQUEST_COLS, VERSION_COLS,
-  toCopy, toProject, toRequestSummary, toVersion,
+  toCopy, toProject, toRequestSummary, toVersion, withStarred,
 } from "../lib/actions/common.js";
+import { decodeCursor, encodeCursor, exploreQuery } from "../lib/actions/explore.js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -44,13 +46,14 @@ function must(r, what) {
 async function makeUser(tag) {
   // admin.createUser (pre-confirmed) instead of auth.signUp: hosted projects require email confirmation.
   const email = `flow-${tag}-${stamp}@example.com`;
+  const username = `flow_${tag}_${stamp}`.slice(0, 30);
   const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) throw error;
   createdUsers.push(data.user.id);
   const client = createClient(url, anonKey, { auth: { persistSession: false } });
   must(await client.auth.signInWithPassword({ email, password }), `sign in ${tag}`);
-  must(await client.rpc("set_username", { p_username: `flow_${tag}_${stamp}`.slice(0, 30) }), `username ${tag}`);
-  return { id: data.user.id, client };
+  must(await client.rpc("set_username", { p_username: username }), `username ${tag}`);
+  return { id: data.user.id, client, username };
 }
 
 /** Service-role save, as app/actions/upload.js commitVersion does after verifying the upload. */
@@ -64,12 +67,15 @@ async function save(/** @type {string} */ actor, /** @type {string} */ projectId
   });
 }
 
+const title = `Flow check ${stamp}`;
+const anon = createClient(url, anonKey, { auth: { persistSession: false } });   // signed-out visitor
+
 try {
   const a = await makeUser("a");
   const b = await makeUser("b");
 
   const projectId = String(must(await a.client.rpc("create_project", {
-    p_title: "Flow check", p_description: null, p_type: "writing", p_visibility: "public", p_license: "cc_by",
+    p_title: title, p_description: null, p_type: "writing", p_visibility: "public", p_license: "cc_by",
   }), "create_project"));
   check(Boolean(projectId), "A creates a project");
 
@@ -88,7 +94,7 @@ try {
 
   const inbox = must(await a.client.from("review_requests").select(REQUEST_COLS).eq("owner_id", a.id), "A inbox");
   const summary = toRequestSummary(inbox[0]);
-  check(inbox.length === 1 && summary.id === requestId && summary.project_title === "Flow check"
+  check(inbox.length === 1 && summary.id === requestId && summary.project_title === title
     && summary.contributor.id === b.id && summary.submitted_version_id === v2, "A's inbox shows the request (embeds ok)");
   const submitted = must(await a.client.from("versions").select(VERSION_COLS).in("id", [v2, v1]), "A reads versions");
   const sv = toVersion(submitted.find((/** @type {any} */ v) => Number(v.id) === v2));
@@ -123,6 +129,37 @@ try {
   must(await b.client.rpc("mark_notifications_read", { p_ids: notes.map((/** @type {any} */ n) => n.id) }), "mark read");
   const unread = await b.client.from("notifications").select("id", { count: "exact", head: true }).eq("read", false);
   check(unread.count === 0, "mark_notifications_read clears unread");
+
+  // ===== P1 =====
+  const numbered = must(await a.client.from("versions").select(VERSION_COLS).eq("project_id", projectId).order("id"), "numbers")
+    .map(toVersion);
+  check(numbered.map((/** @type {any} */ v) => v.number).join(",") === "1,2,3", "version numbers are 1,2,3 across main and copy");
+  const v4 = Number(must(await a.client.rpc("restore_version", { p_project_id: projectId, p_version_id: v1 }), "restore"));
+  const restored = toVersion(must(await a.client.from("versions").select(VERSION_COLS).eq("id", v4).single(), "read restored"));
+  check(restored.number === 4, "restore_version gets the next number (4)");
+
+  const on = must(await b.client.rpc("toggle_star", { p_project_id: projectId }), "star on");
+  const seen = toProject(must(await anon.from("projects").select(PROJECT_COLS).eq("id", projectId).single(), "read star_count"));
+  const [mine] = await withStarred(b.client, b.id, [seen]);
+  check(on.starred === true && on.star_count === 1 && seen.star_count === 1 && mine.starred === true,
+    "star on: starred, star_count 1 (visible signed out), withStarred marks it");
+  const off = must(await b.client.rpc("toggle_star", { p_project_id: projectId }), "star off");
+  const [unstarred] = await withStarred(b.client, b.id, [seen]);
+  check(off.starred === false && off.star_count === 0 && unstarred.starred === false, "star off: star_count 0");
+
+  for (const sort of /** @type {const} */ (["recent", "stars"])) {
+    const found = must(await exploreQuery(anon, { q: String(stamp), sort, after: null }), `explore ${sort}`);
+    const row = found.find((/** @type {any} */ r) => r.id === projectId);
+    check(Boolean(row) && toProject(row).title === title, `explore (${sort}, signed out) finds the project by a title word`);
+    if (!row) continue;
+    const after = decodeCursor(encodeCursor(sort, row), sort);
+    const next = must(await exploreQuery(anon, { q: String(stamp), sort, after }), `explore ${sort} next page`);
+    check(after !== null && !next.some((/** @type {any} */ r) => r.id === projectId), `explore (${sort}) cursor skips past the project`);
+  }
+
+  const prof = must(await anon.from("profiles").select(`${PROFILE_COLS},tags,created_at`).eq("username", a.username).maybeSingle(), "profile");
+  const profProjects = must(await anon.from("projects").select(PROJECT_COLS).eq("owner_id", prof?.id).eq("visibility", "public"), "profile projects");
+  check(prof?.id === a.id && profProjects.some((/** @type {any} */ p) => p.id === projectId), "profile select returns the owner's public projects");
 } catch (err) {
   console.log("FAIL  unexpected error:", err instanceof Error ? err.message : err);
   failures++;
