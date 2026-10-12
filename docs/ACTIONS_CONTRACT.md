@@ -181,3 +181,6 @@ File contents for viewing: `getDownloadUrls(versionId)` → `fetch(url)` → tex
 
 | From | Request | Resolution |
 |---|---|---|
+| backend | `getRequest` → `submitted` and `base` are `Version \| null`. RLS hides a copy's versions from the owner once the copy is back to `private` (after **reject**), and `base` is hidden if the copy row itself is hidden. UI should show "This version is no longer available" instead of crashing. | Implemented as nullable; needs frontend ack. |
+| backend | List reads (`getDashboard`, `getProject.history`/copies, `getCopy.versions`, `getInbox`, `listNotifications`) return the newest 50 rows; no cursor argument exists in the frozen signatures. If a "load more" is needed, add an optional `{ before: number }` arg. | Open; not needed for MVP. |
+| backend | Added npm script `check:flow` to `package.json` (scripts only, no deps). | Done. |
