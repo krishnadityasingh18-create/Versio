@@ -5,7 +5,7 @@
 import { z } from "zod";
 import {
   COPY_COLS, LIST_LIMIT, PROFILE_COLS, PROJECT_COLS, VERSION_COLS,
-  callRpc, failCode, idSchema, mapDbError, ok, run, toCopy, toProfile, toProject, toVersion, uuidSchema,
+  callRpc, failCode, idSchema, mapDbError, ok, run, toCopy, toProfile, toProject, toVersion, uuidSchema, withStarred,
 } from "../../lib/actions/common.js";
 
 /**
@@ -100,7 +100,7 @@ export async function getDashboard() {
     if (error) return mapDbError(error);
     return ok({
       me: { ...toProfile(me.data), storage_used: Number(me.data?.storage_used ?? 0) },
-      projects: (projects.data ?? []).map(toProject),
+      projects: await withStarred(supabase, uid, (projects.data ?? []).map(toProject)),
       copies: (copies.data ?? []).map((/** @type {any} */ row) => ({
         ...toCopy(row, row.project?.main_version_id == null ? null : Number(row.project.main_version_id)),
         project_title: row.project?.title ?? "",
@@ -121,7 +121,7 @@ export async function getProject(projectId) {
     const p = await supabase.from("projects").select(PROJECT_COLS).eq("id", id).maybeSingle();
     if (p.error) return mapDbError(p.error);
     if (!p.data) return failCode("NOT_FOUND");
-    const project = toProject(p.data);
+    const [project] = await withStarred(supabase, uid, [toProject(p.data)]);
     const isOwner = uid !== null && project.owner.id === uid;
     const mainId = project.main_version_id;
 
@@ -172,4 +172,16 @@ export async function getVersion(versionId) {
     if (error) return mapDbError(error);
     return data ? ok({ version: toVersion(data) }) : failCode("NOT_FOUND");
   }, { auth: "optional" });
+}
+
+/**
+ * Stars or unstars a project the caller can read.
+ * @param {string} projectId
+ * @returns {Promise<Result<{ starred: boolean, star_count: number }>>}
+ */
+export async function toggleStar(projectId) {
+  return run(uuidSchema, projectId, async ({ supabase }, id) => {
+    const r = await callRpc(supabase, "toggle_star", { p_project_id: id });
+    return r.ok ? ok({ starred: Boolean(r.data?.starred), star_count: Number(r.data?.star_count ?? 0) }) : r;
+  });
 }

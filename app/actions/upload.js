@@ -152,6 +152,12 @@ export async function commitVersion(input) {
       p_verified: verified,
     });
     if (error) return mapError(error);
+    // Supabase Storage has no lifecycle rules: drop this caller's staged copies now. Best effort;
+    // the save already succeeded.
+    if (fresh.length) {
+      await storage.remove(fresh.map((h) => storage.stagingKey(uid, h)))
+        .catch((err) => console.error("staging cleanup failed:", err instanceof Error ? err.message : err));
+    }
     return { ok: true, data: { versionId: Number(data) } };
   } catch (err) {
     return mapError(err);
