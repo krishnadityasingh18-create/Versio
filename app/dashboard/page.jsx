@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getDashboard } from "@/app/actions/projects.js";
 import { requireViewer } from "@/components/viewer.js";
-import { Badge, Empty, ErrorPage, StatusBadge, TYPE_LABEL, formatBytes, formatDate } from "@/components/ui.jsx";
+import { Badge, Empty, ErrorPage, Stars, StatusBadge, TYPE_LABEL, formatBytes, formatDate } from "@/components/ui.jsx";
 import { USER_QUOTA_BYTES } from "@/lib/limits.js";
 
 export const metadata = { title: "Dashboard" };
@@ -49,6 +49,7 @@ export default async function DashboardPage() {
                   <Link href={`/p/${p.id}`} className="min-w-0 flex-1 truncate font-medium">{p.title}</Link>
                   <Badge>{TYPE_LABEL[p.type]}</Badge>
                   {p.visibility === "private" && <Badge>Private</Badge>}
+                  <Stars count={p.star_count} />
                   <span className="meta hidden sm:inline">{formatDate(p.updated_at)}</span>
                 </li>
               ))}

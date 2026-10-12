@@ -9,6 +9,7 @@ import Notifications from "./Notifications.jsx";
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/requests", label: "Requests" },
+  { href: "/explore", label: "Explore" },
 ];
 
 export default function Sidebar({ uid, username }) {

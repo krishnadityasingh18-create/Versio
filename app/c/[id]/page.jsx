@@ -14,7 +14,7 @@ function StateBanner({ copy, project, openRequest, isAuthor }) {
   if (copy.state === "published") {
     return (
       <Banner tone="ok" title="Published">
-        Based on {project.title} by <Who profile={project.owner} />. Everyone who can see the project can see this copy.
+        Based on {project.title} by <Who profile={project.owner} link />. Everyone who can see the project can see this copy.
       </Banner>
     );
   }
@@ -52,10 +52,10 @@ export default async function CopyPage({ params }) {
       <header className="flex flex-col gap-3">
         <Link href={`/p/${project.id}`} className="text-sm">← {project.title}</Link>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="h1">{isAuthor ? "My copy" : <>Copy by <Who profile={copy.author} /></>}</h1>
+          <h1 className="h1">{isAuthor ? "My copy" : <>Copy by <Who profile={copy.author} link /></>}</h1>
           <StatusBadge status={copy.state} />
         </div>
-        <p className="meta">Copy #{copy.id} · made {formatDate(copy.created_at)} · from main v{copy.base_version_id}</p>
+        <p className="meta">Copy #{copy.id} · made {formatDate(copy.created_at)}</p>
         <StateBanner copy={copy} project={project} openRequest={openRequest} isAuthor={isAuthor} />
         {copy.is_stale && (
           <Banner tone="warn" title="The main version has changed">
@@ -100,7 +100,7 @@ export default async function CopyPage({ params }) {
                 <li key={v.id} className="row">
                   <span className="min-w-0 flex-1 text-sm">{v.note || <span className="text-ink-2">No note</span>}</span>
                   {v.id === head.id && <Badge tone="accent">Latest</Badge>}
-                  <span className="meta">v{v.id} · {formatDate(v.created_at)}</span>
+                  <span className="meta">v{v.number} · {formatDate(v.created_at)}</span>
                 </li>
               ))}
             </ul>

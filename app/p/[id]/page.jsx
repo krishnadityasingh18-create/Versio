@@ -3,8 +3,8 @@ import Link from "next/link";
 import { getProject } from "@/app/actions/projects.js";
 import { getViewer } from "@/components/viewer.js";
 import VersionFiles from "@/components/VersionFiles.jsx";
-import { MakeCopyButton, PromoteButton, RestoreButton } from "@/components/Actions.jsx";
-import { Badge, Empty, ErrorPage, LICENSE_LABEL, StatusBadge, TYPE_LABEL, Who, formatDate } from "@/components/ui.jsx";
+import { MakeCopyButton, PromoteButton, RestoreButton, StarButton } from "@/components/Actions.jsx";
+import { Badge, Empty, ErrorPage, LICENSE_LABEL, StarIcon, StatusBadge, TYPE_LABEL, Who, formatDate } from "@/components/ui.jsx";
 
 export const metadata = { title: "Project" };
 
@@ -29,10 +29,17 @@ export default async function ProjectPage({ params, searchParams }) {
           <div className="min-w-0">
             <h1 className="h1">{project.title}</h1>
             <p className="mt-1 text-sm text-ink-2">
-              by <Who profile={project.owner} />
+              by <Who profile={project.owner} link />
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {viewer ? (
+              <StarButton projectId={project.id} starred={project.starred ?? false} count={project.star_count ?? 0} />
+            ) : (
+              <Link href="/login" className="btn-ghost">
+                <StarIcon />Star<span className="meta">{project.star_count ?? 0}<span className="sr-only"> stars, log in to star</span></span>
+              </Link>
+            )}
             {isOwner && <Link href={`/p/${project.id}/edit`} className="btn">Edit main version</Link>}
             {!isOwner && myCopies.length > 0 && <Link href={`/c/${myCopies[0].id}`} className="btn-ghost">Open my copy</Link>}
             {canCopy && (viewer ? <MakeCopyButton projectId={project.id} /> : <Link href="/login" className="btn">Log in to make a copy</Link>)}
@@ -69,8 +76,8 @@ export default async function ProjectPage({ params, searchParams }) {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">{h.version.note || <span className="text-ink-2">No note</span>}</p>
                     <p className="meta">
-                      v{h.version.id} · <Who profile={h.version.author} />
-                      {h.from_copy_id && <> · from a copy, made main by <Who profile={h.promoted_by} /></>} · {formatDate(h.created_at)}
+                      v{h.version.number} · <Who profile={h.version.author} link />
+                      {h.from_copy_id && <> · from a copy, made main by <Who profile={h.promoted_by} link /></>} · {formatDate(h.created_at)}
                     </p>
                   </div>
                   {h.version.id === project.main_version_id ? (
@@ -106,7 +113,7 @@ export default async function ProjectPage({ params, searchParams }) {
         <section aria-label="Files">
           {main ? (
             <>
-              <p className="meta mb-3">Main version v{main.id} · saved {formatDate(main.created_at)}{main.note ? ` · ${main.note}` : ""}</p>
+              <p className="meta mb-3">Main version v{main.number} · saved {formatDate(main.created_at)}{main.note ? ` · ${main.note}` : ""}</p>
               <VersionFiles versionId={main.id} type={project.type} />
             </>
           ) : (
