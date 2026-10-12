@@ -30,7 +30,7 @@ export async function fetchText(url) {
 }
 
 export function textClass(type) {
-  return type === "writing" ? "font-serif text-prose" : "font-mono text-[13px] leading-5";
+  return type === "writing" ? "font-serif text-prose" : "font-mono text-base leading-6 sm:text-[13px] sm:leading-5";
 }
 
 /** Read-only file browser for a version. */
@@ -63,8 +63,8 @@ export default function VersionFiles({ versionId, type }) {
               <button
                 type="button"
                 onClick={() => view(f)}
-                aria-pressed={open?.path === f.path}
-                className={`min-w-0 flex-1 truncate text-left font-mono text-[13px] ${open?.path === f.path ? "text-accent-text" : "text-ink"}`}
+                aria-pressed={open?.path === f.path} title={f.path}
+                className={`min-w-0 flex-1 self-stretch truncate text-left font-mono underline-offset-2 hover:underline focus-visible:underline text-[13px] ${open?.path === f.path ? "text-accent-text" : "text-ink"}`}
               >
                 {f.path}
               </button>

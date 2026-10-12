@@ -29,8 +29,8 @@ export default async function RequestPage({ params }) {
   const isContributor = !isOwner;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="page-wide flex flex-1 flex-col gap-8">
+    <div className="flex min-h-dvh flex-col">
+      <div className={`page-wide flex flex-1 flex-col gap-8 ${isOwner && request.status === "pending" ? "[&_*]:scroll-mb-48" : ""}`}>
         <header className="flex flex-col gap-2">
           <Link href="/requests" className="text-sm">← Requests</Link>
           <div className="flex flex-wrap items-center gap-3">

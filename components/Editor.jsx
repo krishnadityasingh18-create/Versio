@@ -125,6 +125,15 @@ export default function Editor({ projectId, copyId = null, parentId = null, type
     router.refresh();
   }
 
+  const dirty = list.some((x) => x.edited) || deletes.length > 0;
+  // Warn before leaving with unsaved edits (tab close, reload, typed URL).
+  useEffect(() => {
+    if (!dirty || saving) return;
+    const warn = (e) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, saving]);
+
   if (parent.loading) return <p className="text-ink-2">Loading files…</p>;
   if (parent.error) return <ErrorNote>{parent.error}</ErrorNote>;
 
@@ -163,7 +172,7 @@ export default function Editor({ projectId, copyId = null, parentId = null, type
             <div className="flex gap-2">
               <label htmlFor="new-file" className="sr-only">New text file name</label>
               <input id="new-file" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={type === "code" ? "main.py" : "chapter-1.md"}
-                className="field py-1.5 font-mono text-[13px]"
+                className="field py-1.5 font-mono text-base sm:text-[13px]"
                 onKeyDown={(e) => e.key === "Enter" && addTextFile(e)} />
               <button type="button" className="btn-ghost shrink-0" onClick={addTextFile}>Add file</button>
             </div>
@@ -180,8 +189,8 @@ export default function Editor({ projectId, copyId = null, parentId = null, type
                 return (
                   <li key={x.path} className="row">
                     {openable ? (
-                      <button type="button" onClick={() => open(x)} aria-pressed={selected === x.path}
-                        className={`min-w-0 flex-1 truncate text-left font-mono text-[13px] ${selected === x.path ? "text-accent-text" : "text-ink"}`}>
+                      <button type="button" onClick={() => open(x)} aria-pressed={selected === x.path} title={x.path}
+                        className={`min-w-0 flex-1 self-stretch truncate text-left font-mono underline-offset-2 hover:underline focus-visible:underline text-[13px] ${selected === x.path ? "text-accent-text" : "text-ink"}`}>
                         {x.path}
                       </button>
                     ) : (

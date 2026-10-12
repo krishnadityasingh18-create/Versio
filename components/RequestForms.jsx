@@ -80,7 +80,7 @@ export function ReviewBar({ requestId }) {
             }}>
             Ask for changes
           </button>
-          <button type="button" className="btn-ghost btn-danger" disabled={busy} onClick={() => decide("reject")}>Reject</button>
+          <button type="button" className="btn-ghost btn-danger" disabled={busy} onClick={() => window.confirm("Reject this request? The copy goes back to a private draft, and this request can't be reopened.") && decide("reject")}>Reject</button>
         </div>
       </div>
       {(error || hint) && <div className="mt-2"><ErrorNote>{error ?? hint}</ErrorNote></div>}

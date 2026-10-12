@@ -4,9 +4,10 @@
 @theme {
   --color-canvas: #faf8f5;
   --color-surface: #fdfbfa;
-  --color-line: #d1d1cd;
+  --color-line: #d1d1cd; /* hairline dividers (decorative) */
+  --color-line-strong: #8a8882; /* input boundaries: >=3:1 */
   --color-ink: #27251e;
-  --color-ink-2: #72706b;
+  --color-ink-2: #66645e; /* AA on canvas and on 12% status tints */
   --color-ink-3: #92918b; /* placeholders and disabled only: below AA for body text */
   --color-accent: #016a71;
   --color-ok: #34785c;
@@ -39,6 +40,7 @@
     --color-canvas: #191a17;
     --color-surface: #212220;
     --color-line: #3a3b37;
+    --color-line-strong: #74756f;
     --color-ink: #ecebe6;
     --color-ink-2: #a8a69f;
     --color-ink-3: #7d7b75;
@@ -79,6 +81,16 @@
   ::placeholder {
     color: var(--color-ink-3);
   }
+  button:not(:disabled), summary, label[for] {
+    cursor: pointer;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
   dialog::backdrop {
     background: rgb(0 0 0 / 0.3);
   }
@@ -87,22 +99,22 @@
 /* Small shared component classes (no component library). */
 @layer components {
   .btn {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-field bg-ink px-4 text-sm font-medium text-canvas no-underline disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-11 sm:h-10 items-center justify-center gap-2 rounded-field bg-ink px-4 text-sm font-medium text-canvas no-underline disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-accent {
     @apply bg-accent;
   }
   .btn-ghost {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-ghost border border-line bg-transparent px-3 text-sm font-medium text-ink no-underline hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-11 sm:h-10 items-center justify-center gap-2 rounded-ghost border border-line bg-transparent px-3 text-sm font-medium text-ink no-underline hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-danger {
     @apply text-bad-text;
   }
   .btn-sm {
-    @apply h-8 px-2.5 text-xs;
+    @apply h-11 px-3 text-sm sm:h-8 sm:px-2.5 sm:text-xs;
   }
   .field {
-    @apply w-full rounded-field border border-line bg-surface px-3 py-2 text-base text-ink focus-visible:outline-2 focus-visible:outline-accent;
+    @apply w-full rounded-field border border-line-strong bg-surface px-3 py-2 text-base text-ink focus-visible:outline-2 focus-visible:outline-accent;
   }
   .label {
     @apply mb-1 block text-sm font-medium text-ink;

@@ -37,7 +37,7 @@ export default async function DashboardPage() {
       <section aria-labelledby="my-projects">
         <div className="mb-2 flex items-center justify-between">
           <h2 id="my-projects" className="h2">My projects</h2>
-          <Link href="/projects/new" className="btn-ghost btn-sm">New project</Link>
+          <Link href="/projects/new" className="btn-ghost btn-sm md:hidden">New project</Link>
         </div>
         <div className="card py-1">
           {projects.length === 0 ? (

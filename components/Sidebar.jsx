@@ -30,7 +30,7 @@ export default function Sidebar({ uid, username }) {
     }`;
 
   return (
-    <aside className="border-b border-line bg-canvas md:sticky md:top-0 md:h-screen md:w-[260px] md:shrink-0 md:border-r md:border-b-0">
+    <aside className="border-b border-line bg-canvas md:sticky md:top-0 md:flex md:h-dvh md:w-[260px] md:flex-col md:shrink-0 md:border-r md:border-b-0">
       <div className="flex items-center justify-between px-4 py-3 md:px-5 md:py-5">
         <Link href="/dashboard" className="text-base font-medium text-ink no-underline">Versio</Link>
         <div className="flex items-center gap-2">
@@ -46,10 +46,10 @@ export default function Sidebar({ uid, username }) {
           </button>
         </div>
       </div>
-      <div id="app-nav" className={`${open ? "flex" : "hidden"} flex-col gap-6 px-4 pb-4 md:flex md:h-[calc(100vh-68px)] md:px-5`}>
+      <div id="app-nav" className={`${open ? "flex" : "hidden"} flex-col gap-6 px-4 pb-4 md:flex md:min-h-0 md:flex-1 md:px-5`}>
         <nav aria-label="Main" className="flex flex-col gap-1">
           {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className={linkClass(n.href)} aria-current={pathname === n.href ? "page" : undefined}>
+            <Link key={n.href} href={n.href} className={linkClass(n.href)} aria-current={pathname === n.href || pathname.startsWith(n.href + "/") ? "page" : undefined}>
               {n.label}
             </Link>
           ))}

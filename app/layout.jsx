@@ -21,7 +21,7 @@ export default async function RootLayout({ children }) {
   const viewer = await getViewer();
   return (
     <html lang="en" className={`${inter.variable} ${garamond.variable} ${mono.variable}`}>
-      <body className="min-h-screen bg-canvas text-ink antialiased">
+      <body className="min-h-dvh bg-canvas text-ink antialiased">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-ghost focus:bg-surface focus:px-3 focus:py-2">
           Skip to content
         </a>

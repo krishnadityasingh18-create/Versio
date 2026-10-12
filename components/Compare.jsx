@@ -80,7 +80,7 @@ export default function Compare({ baseId, submittedId, type }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <label htmlFor="compare-file" className="text-sm text-ink-2">File</label>
-        <select id="compare-file" value={path ?? ""} onChange={(e) => setPath(e.target.value)} className="field w-auto max-w-full font-mono text-[13px]">
+        <select id="compare-file" value={path ?? ""} onChange={(e) => setPath(e.target.value)} className="field w-auto max-w-full font-mono text-base sm:text-[13px]">
           {paths.map((p) => (
             <option key={p} value={p}>{p}{LABEL[status(p)] ? ` (${LABEL[status(p)]})` : ""}</option>
           ))}
