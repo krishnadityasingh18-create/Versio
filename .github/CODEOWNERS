@@ -1,0 +1,16 @@
+# CODEOWNERS — who gets auto-requested to review a PR.
+# Last match wins. Owners must have write access (be collaborators) to be
+# auto-requested. Review is advisory here (code-owner review is not required to
+# merge) — it just makes sure the right people see the PR.
+#
+# Default: the whole team reviews anything not covered by a more specific rule.
+*                       @krishnadityasingh18-create @SenCruCiAl @dip-soumya
+
+# Starter per-area template — uncomment and edit to match who actually owns each
+# area, so PRs only ping the relevant person instead of everyone:
+#
+# /app/              @krishnadityasingh18-create        # frontend routes/pages
+# /components/       @krishnadityasingh18-create        # UI components
+# /lib/              @SenCruCiAl                         # server libs / Supabase clients
+# /supabase/         @SenCruCiAl                         # schema, RLS, RPCs, migrations
+# /docs/             @dip-soumya                         # docs
