@@ -147,6 +147,18 @@
   .h2 {
     @apply text-base font-medium;
   }
+  .skeleton {
+    @apply rounded-field bg-line/60;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
 }
 
 /* Shiki output (components/Code.jsx): keep our font and surface, use the dark theme's colours in dark mode. */

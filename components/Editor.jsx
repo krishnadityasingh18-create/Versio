@@ -7,6 +7,7 @@ import { saveVersion } from "@/lib/upload-client.js";
 import { MAX_FILE_BYTES, MAX_FILES_PER_VERSION } from "@/lib/limits.js";
 import { useVersionFiles, fetchText, textClass } from "./VersionFiles.jsx";
 import { ErrorNote, formatBytes, isTextPath } from "./ui.jsx";
+import { Skeleton, SkeletonText, Loading } from "./Skeleton.jsx";
 
 export default function Editor({ projectId, copyId = null, parentId = null, type, doneHref }) {
   const router = useRouter();
@@ -134,7 +135,11 @@ export default function Editor({ projectId, copyId = null, parentId = null, type
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, saving]);
 
-  if (parent.loading) return <p className="text-ink-2">Loading files…</p>;
+  if (parent.loading) return (
+    <Loading label="Loading files…" className="flex flex-col gap-2">
+      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-11 w-full" />)}
+    </Loading>
+  );
   if (parent.error) return <ErrorNote>{parent.error}</ErrorNote>;
 
   const changedCount = list.filter((x) => x.edited).length + deletes.length;
@@ -215,7 +220,7 @@ export default function Editor({ projectId, copyId = null, parentId = null, type
             <div className="flex h-full flex-col gap-2">
               <label htmlFor="file-text" className="meta">{current.path}</label>
               {loadingText || current.text == null ? (
-                <p className="text-sm text-ink-2">Loading…</p>
+                <Loading><SkeletonText lines={8} /></Loading>
               ) : (
                 <textarea id="file-text" value={current.text} spellCheck={type === "writing"}
                   onChange={(e) => update(current.path, { text: e.target.value, file: undefined, edited: true })}

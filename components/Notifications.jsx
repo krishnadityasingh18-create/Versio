@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client.js";
 import { listNotifications, markNotificationsRead } from "@/app/actions/notifications.js";
 import { formatDate } from "./ui.jsx";
+import { Skeleton, Loading } from "./Skeleton.jsx";
 
 /** Plain-language text and link for each notification type the RPCs send. */
 function describe(n) {
@@ -84,7 +85,9 @@ export default function Notifications({ uid }) {
       {open && (
         <div className="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-card border border-line bg-surface p-2 shadow-raised md:left-0 md:right-auto">
           {state.loading ? (
-            <p className="p-3 text-sm text-ink-2">Loading…</p>
+            <Loading className="flex flex-col gap-2 p-3">
+              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </Loading>
           ) : state.error ? (
             <p role="alert" className="p-3 text-sm text-bad-text">{state.error}</p>
           ) : state.items.length === 0 ? (

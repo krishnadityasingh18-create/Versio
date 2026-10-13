@@ -5,6 +5,7 @@ import { getDownloadUrls } from "@/app/actions/upload.js";
 import CodeBlock from "./Code.jsx";
 import StlViewer, { isStl } from "./StlViewer.jsx";
 import { Empty, ErrorNote, formatBytes, isTextPath } from "./ui.jsx";
+import { Skeleton, SkeletonText, Loading } from "./Skeleton.jsx";
 
 /** Files of one version with signed URLs: { loading, error, files }. versionId null = no files. */
 export function useVersionFiles(versionId) {
@@ -51,7 +52,11 @@ export default function VersionFiles({ versionId, type }) {
   }
 
   if (versionId == null) return <Empty>Nothing has been saved here yet.</Empty>;
-  if (loading) return <p className="py-4 text-sm text-ink-2">Loading files…</p>;
+  if (loading) return (
+    <Loading label="Loading files…" className="flex flex-col gap-2 py-4">
+      {[0, 1, 2].map((i) => <Skeleton key={i} className="h-11 w-full" />)}
+    </Loading>
+  );
   if (error) return <ErrorNote>{error}</ErrorNote>;
   if (files.length === 0) return <Empty>This version has no files.</Empty>;
 
@@ -91,7 +96,7 @@ export default function VersionFiles({ versionId, type }) {
           ) : open.error ? (
             <ErrorNote>{open.error}</ErrorNote>
           ) : open.text == null ? (
-            <p className="text-sm text-ink-2">Loading…</p>
+            <Loading><SkeletonText lines={8} /></Loading>
           ) : type === "code" ? (
             <CodeBlock path={open.path} text={open.text} className={`overflow-x-auto ${textClass(type)}`} />
           ) : (

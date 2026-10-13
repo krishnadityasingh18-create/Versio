@@ -8,6 +8,7 @@ import { useVersionFiles, fetchText, textClass } from "./VersionFiles.jsx";
 import CodeBlock from "./Code.jsx";
 import StlViewer, { isStl } from "./StlViewer.jsx";
 import { ErrorNote, formatBytes, isTextPath } from "./ui.jsx";
+import { SkeletonText, Loading } from "./Skeleton.jsx";
 
 /** One side of the diff: base shows removals, copy shows additions. Colour + strike/underline + sr-only words. */
 function DiffText({ parts, side }) {
@@ -48,7 +49,7 @@ function Side({ title, side, path, file, text, parts, type, sync, paneRef, onScr
       ) : (
         <div ref={paneRef} onScroll={onScroll} className="max-h-[65vh] overflow-auto">
           {text == null ? (
-            <p className="text-sm text-ink-2">Loading…</p>
+            <Loading><SkeletonText lines={10} /></Loading>
           ) : parts ? (
             <pre className={`whitespace-pre-wrap ${textClass(type)}`}><DiffText parts={parts} side={side} /></pre>
           ) : type === "code" ? (
@@ -112,7 +113,7 @@ export default function Compare({ baseId, submittedId, baseNumber, submittedNumb
     };
   }
 
-  if (!ready) return <p className="text-sm text-ink-2">Loading files…</p>;
+  if (!ready) return <Loading label="Loading files…"><SkeletonText lines={3} /></Loading>;
   if (base.error || sub.error) return <ErrorNote>{base.error ?? sub.error}</ErrorNote>;
   if (paths.length === 0) return <p className="text-sm text-ink-2">Neither version has any files.</p>;
 
