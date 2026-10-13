@@ -88,18 +88,19 @@ export async function restoreVersion(input) {
  */
 export async function getDashboard() {
   return run(z.undefined(), undefined, async ({ supabase, uid }) => {
-    const [me, projects, copies] = await Promise.all([
-      supabase.from("profiles").select(`${PROFILE_COLS},storage_used`).eq("id", uid).single(),
+    const [me, su, projects, copies] = await Promise.all([
+      supabase.from("profiles").select(PROFILE_COLS).eq("id", uid).single(),
+      supabase.rpc("my_storage_used"), // storage_used is not client-readable on profiles; owner-scoped RPC
       supabase.from("projects").select(PROJECT_COLS).eq("owner_id", uid)
         .order("updated_at", { ascending: false }).limit(LIST_LIMIT),
       supabase.from("copies")
         .select(`${COPY_COLS},project:projects!copies_project_id_fkey(title,main_version_id)`)
         .eq("author_id", uid).order("id", { ascending: false }).limit(LIST_LIMIT),
     ]);
-    const error = me.error ?? projects.error ?? copies.error;
+    const error = me.error ?? su.error ?? projects.error ?? copies.error;
     if (error) return mapDbError(error);
     return ok({
-      me: { ...toProfile(me.data), storage_used: Number(me.data?.storage_used ?? 0) },
+      me: { ...toProfile(me.data), storage_used: Number(su.data ?? 0) },
       projects: await withStarred(supabase, uid, (projects.data ?? []).map(toProject)),
       copies: (copies.data ?? []).map((/** @type {any} */ row) => ({
         ...toCopy(row, row.project?.main_version_id == null ? null : Number(row.project.main_version_id)),

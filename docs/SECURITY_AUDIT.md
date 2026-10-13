@@ -54,7 +54,17 @@ Uploaded `<script>…</script>` under several names; inspected the real signed-G
 ## Informational (no action required)
 - **No `X-Content-Type-Options: nosniff` on storage GETs.** It cannot be set through a presigned S3 GET, and it is not needed here: the storage origin is isolated from the app origin (so a rendered file can never reach app cookies/DOM), `text/plain` is not sniffed into HTML by modern browsers, and hostile renderable types are already forced to `attachment`/`octet-stream`. If storage ever moves behind the app's own domain, revisit this.
 
-## Not in scope tonight (owner to do when awake)
-- Active third-party pentest tooling (deferred).
+## Re-test 2026-10-14 (fresh live probe, current `tonight-mvp`)
+Strix was requested but cannot run here (needs Docker + a paid LLM key, neither present), so this was a native re-probe of the live project `hxwilokouidvrotwptur` with the anon key and a disposable JWT, exactly what a malicious browser has. The throwaway attacker user was deleted afterward (cascade verified). **Still no exploitable vulnerabilities.**
+
+- **Anon reads** — only the one *public* project + its public profile/versions are returned; `stars`/`notifications`/`copies`/`request_events` return `[]` under RLS; `blobs` is 401. A newly created *private* project was invisible to anon both by id (`[]`) and in the full listing.
+- **Anon writes** — every `INSERT/UPDATE/DELETE` on `projects`/`versions`/`profiles`/`stars` → `42501` (privileges revoked). Privileged RPCs (`commit_version`, `takedown_blob`) are not even in anon's schema cache (`PGRST202`).
+- **Authenticated cross-tenant** (real JWT, after setting a username so ownership checks actually run) — `update_project`, `restore_version`, `promote_copy`, `review_request` on victim A all → `NOT_AUTHORIZED` (P0001); `make_copy` of an `all_rights_reserved` project → `LICENSE_FORBIDS_COPY`; `set_username('kdsv')` → `USERNAME_TAKEN`. Direct table writes → `42501`. `commit_version` as `authenticated` → `42501` (service_role only); `takedown_blob` is `revoke ... from public, anon, authenticated`.
+- **`mark_notifications_read`** confirmed scoped at the DB: `where user_id = v_uid and id = any(p_ids)` — a caller cannot touch another user's notifications.
+- **Storage** code unchanged since the original audit; `presignGet` still forces `ResponseContentDisposition`/`ResponseContentType`, keys validated against `/^[0-9a-f]{64}$/` + UUID regex.
+
+## Not in scope (owner to do)
+- Active third-party pentest tooling (Strix) — blocked on Docker + an LLM API key.
 - Google OAuth and a production email provider (Supabase's built-in email is rate-limited).
 - Rate limiting / abuse controls beyond Supabase defaults.
+- ~~`profiles.storage_used` is readable by anon~~ **Patched 2026-10-14** (migrations `0007`/`0008`): table-wide `select` on `profiles` was replaced with a column grant on the public columns only (`id, username, display_name, avatar_url, tags, created_at`); `storage_used` is no longer client-readable by anon or authenticated, and the owner's own value is served by the `my_storage_used()` SECURITY DEFINER RPC (scoped to `auth.uid()`). Verified live: `select=storage_used` and `select=*` → `42501`; explicit public reads and the owner RPC still work.
